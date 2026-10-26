@@ -13,6 +13,7 @@
  *    VeriSight DEMO envelope (VSP1), which is NOT a government specification.
  * ============================================================ */
 import { evaluateSelection, ADAPTERS, type CheckId, type Applicability, type DocTypeId, type PurposeId } from './purposes'
+import { validateDocumentFields } from './document-rules'
 
 export const LIVE_NOT_VERIFIED = 'LIVE ISSUER STATUS NOT VERIFIED'
 
@@ -35,12 +36,24 @@ export type PermitFields = {
   area: string
   movementPurpose: string
   vehicleNo: string
+  chassisNo: string
+  engineNo: string
   cargo: string
+  hsnCode: string
+  quantity: string
+  goodsValue: string
+  departure: string
+  destination: string
   organisation: string
+  employeeId: string
+  documentNo: string
+  certificateId: string
+  mrzText: string
 }
 export const FIELD_KEYS = [
   'permitNo', 'category', 'issuingAuthority', 'jurisdiction', 'holderName', 'idRef', 'issueDate', 'validFrom', 'validTo',
-  'dailyFrom', 'dailyTo', 'allowedDays', 'entries', 'entryPoints', 'exitPoints', 'area', 'movementPurpose', 'vehicleNo', 'cargo', 'organisation',
+  'dailyFrom', 'dailyTo', 'allowedDays', 'entries', 'entryPoints', 'exitPoints', 'area', 'movementPurpose', 'vehicleNo', 'chassisNo',
+  'engineNo', 'cargo', 'hsnCode', 'quantity', 'goodsValue', 'departure', 'destination', 'organisation', 'employeeId', 'documentNo', 'certificateId', 'mrzText',
 ] as const satisfies readonly (keyof PermitFields)[]
 export const emptyFields = (): PermitFields => Object.fromEntries(FIELD_KEYS.map((k) => [k, ''])) as PermitFields
 
@@ -49,7 +62,10 @@ export const FIELD_LABEL: Record<keyof PermitFields, string> = {
   holderName: 'Holder name', idRef: 'Linked ID reference', issueDate: 'Issue date', validFrom: 'Valid from', validTo: 'Valid until / expiry',
   dailyFrom: 'Daily window from (HH:MM)', dailyTo: 'Daily window to (HH:MM)', allowedDays: 'Permitted days', entries: 'Entries (single / multiple)',
   entryPoints: 'Authorised entry point(s)', exitPoints: 'Authorised exit point(s)', area: 'Permitted area', movementPurpose: 'Permitted purpose',
-  vehicleNo: 'Vehicle number', cargo: 'Cargo / goods', organisation: 'Organisation / trader',
+  vehicleNo: 'Vehicle registration number', chassisNo: 'Chassis / VIN', engineNo: 'Engine number', cargo: 'Cargo / goods description',
+  hsnCode: 'HSN code', quantity: 'Goods quantity', goodsValue: 'Goods value', departure: 'Departure point', destination: 'Destination',
+  organisation: 'Organisation / trader', employeeId: 'Employee / contractor ID', documentNo: 'Document number', certificateId: 'Certificate ID',
+  mrzText: 'Machine-readable zone (MRZ)',
 }
 
 /* ------------------------------------------------------------
@@ -231,8 +247,11 @@ const ALIASES: Record<string, keyof PermitFields> = {
   dailyfrom: 'dailyFrom', dailyto: 'dailyTo', days: 'allowedDays', alloweddays: 'allowedDays',
   entries: 'entries', entrymode: 'entries',
   entrypoint: 'entryPoints', entrypoints: 'entryPoints', entry: 'entryPoints', exitpoint: 'exitPoints', exitpoints: 'exitPoints', exit: 'exitPoints',
-  area: 'area', zone: 'area', purpose: 'movementPurpose', vehicle: 'vehicleNo', vehicleno: 'vehicleNo', regno: 'vehicleNo',
-  cargo: 'cargo', goods: 'cargo', organisation: 'organisation', organization: 'organisation', trader: 'organisation', company: 'organisation',
+  area: 'area', zone: 'area', purpose: 'movementPurpose', vehicle: 'vehicleNo', vehicleno: 'vehicleNo', regno: 'vehicleNo', registrationnumber: 'vehicleNo',
+  chassis: 'chassisNo', chassisno: 'chassisNo', vin: 'chassisNo', enginenumber: 'engineNo', engineno: 'engineNo',
+  cargo: 'cargo', goods: 'cargo', goodsdescription: 'cargo', hsn: 'hsnCode', hsncode: 'hsnCode', quantity: 'quantity', qty: 'quantity', value: 'goodsValue', goodsvalue: 'goodsValue',
+  departure: 'departure', origin: 'departure', destination: 'destination', organisation: 'organisation', organization: 'organisation', trader: 'organisation', company: 'organisation',
+  employeeid: 'employeeId', contractorid: 'employeeId', documentno: 'documentNo', documentnumber: 'documentNo', certificateno: 'certificateId', certificateid: 'certificateId', mrz: 'mrzText',
 }
 const aliasKey = (k: string) => ALIASES[k.toLowerCase().replace(/[^a-z]/g, '')]
 
@@ -474,11 +493,20 @@ const LABELS: [RegExp, keyof PermitFields][] = [
   [/(?:valid\s*(?:up\s*)?(?:to|till|until)|expiry(?:\s*date)?|expires(?:\s*on)?|date\s*of\s*expiry)/i, 'validTo'],
   [/(?:date\s*of\s*issue|issue\s*date|issued\s*on)/i, 'issueDate'],
   [/(?:vehicle\s*(?:no|number|reg\w*)|registration\s*no)/i, 'vehicleNo'],
+  [/(?:chassis|vin)(?:\s*(?:no|number))?/i, 'chassisNo'],
+  [/engine\s*(?:no|number)/i, 'engineNo'],
   [/(?:entry\s*points?|point\s*of\s*entry)/i, 'entryPoints'],
   [/(?:exit\s*points?|point\s*of\s*exit)/i, 'exitPoints'],
   [/(?:category|type\s*of\s*(?:pass|permit))/i, 'category'],
   [/(?:jurisdiction|district)/i, 'jurisdiction'],
   [/(?:cargo|goods|commodity)/i, 'cargo'],
+  [/(?:hsn|harmonized\s*system)(?:\s*(?:code|no))?/i, 'hsnCode'],
+  [/(?:quantity|qty)/i, 'quantity'],
+  [/(?:goods?\s*value|declared\s*value|invoice\s*value)/i, 'goodsValue'],
+  [/(?:departure|origin|from\s*location)/i, 'departure'],
+  [/(?:destination|to\s*location)/i, 'destination'],
+  [/(?:employee|contractor)\s*(?:id|no|number)/i, 'employeeId'],
+  [/(?:document|certificate)\s*(?:no|number|id)/i, 'documentNo'],
 ]
 export type Extracted = { fields: Partial<PermitFields>; missing: (keyof PermitFields)[]; ambiguous: (keyof PermitFields)[] }
 
@@ -496,6 +524,20 @@ export function extractPermitFields(text: string, wanted: (keyof PermitFields)[]
     const uniq = [...new Set(vals.map((v) => v.trim()))]
     if (uniq.length > 1) ambiguous.push(k) // two different readings: do not pick one silently
     else fields[k] = uniq[0]
+  }
+  const cleanMrz = text.split(/\r?\n/).map((line) => line.toUpperCase().replace(/\s/g, '').replace(/[^A-Z0-9<]/g, ''))
+  for (let i = 0; i < cleanMrz.length - 1; i++) {
+    const first = cleanMrz[i]
+    const second = cleanMrz[i + 1]
+    if (/^[PV][A-Z<]/.test(first) && first.length === 44 && second.length === 44) {
+      fields.mrzText = `${first}\n${second}`
+      break
+    }
+    const third = cleanMrz[i + 2]
+    if (/^[ACI][A-Z<]/.test(first) && first.length === 30 && second.length === 30 && third?.length === 30) {
+      fields.mrzText = `${first}\n${second}\n${third}`
+      break
+    }
   }
   return { fields, ambiguous, missing: wanted.filter((k) => !fields[k] && !ambiguous.includes(k)) }
 }
@@ -578,6 +620,11 @@ export async function runPermitChecks(inp: PermitInput): Promise<PermitReport> {
   else push('extraction', 'Field extraction', missing.length ? 'warn' : 'pass', missing.length ? `Missing: ${missing.map((k) => FIELD_LABEL[k]).join(', ')}` : 'Required fields present.')
   if (inp.extraction.ambiguous?.length) review.push('Some fields were read two different ways.')
   if (!inp.reviewed) review.push('The extracted fields have not been confirmed by the operator.')
+
+  for (const check of validateDocumentFields(inp.docType, f)) {
+    push(`document-${check.key}`, check.label, check.state, check.text)
+    if (check.review) review.push(`${check.label} needs manual review.`)
+  }
 
   /* QR */
   let parsed: ParsedQr[] = []

@@ -25,7 +25,10 @@ const TRUSTED_KEYS = (process.env.NEXT_PUBLIC_PERMIT_TRUSTED_KEYS_SHA256 ?? '').
 type LocalRecord = RegistryEntry & { id: string; checkpoint: string; direction: 'entry' | 'exit'; overall: Overall; note: string; operator: string }
 
 const CORE: (keyof PermitFields)[] = ['permitNo', 'holderName', 'category', 'issuingAuthority', 'jurisdiction', 'idRef', 'issueDate', 'validFrom', 'validTo']
-const MORE: (keyof PermitFields)[] = ['dailyFrom', 'dailyTo', 'allowedDays', 'entries', 'entryPoints', 'exitPoints', 'area', 'movementPurpose', 'vehicleNo', 'cargo', 'organisation']
+const MORE: (keyof PermitFields)[] = [
+  'dailyFrom', 'dailyTo', 'allowedDays', 'entries', 'entryPoints', 'exitPoints', 'area', 'movementPurpose', 'vehicleNo', 'chassisNo', 'engineNo',
+  'cargo', 'hsnCode', 'quantity', 'goodsValue', 'departure', 'destination', 'organisation', 'employeeId', 'documentNo', 'certificateId', 'mrzText',
+]
 
 const ROW_STYLE: Record<RowState, string> = {
   pass: 'text-success border-success/40 bg-success/10',
@@ -57,7 +60,7 @@ export function PermitPanel() {
   const [error, setError] = useState<string | null>(null)
   const [fields, setFields] = useState<PermitFields>(emptyFields())
   const [extraction, setExtraction] = useState<{ ran: boolean; ambiguous: (keyof PermitFields)[]; missing: (keyof PermitFields)[]; note: string }>({ ran: false, ambiguous: [], missing: [], note: '' })
-  const [scanned, setScanned] = useState<{ payloads: string[]; multiSupported: boolean; drawn: boolean; done: boolean }>({ payloads: [], multiSupported: false, drawn: false, done: false })
+  const [scanned, setScanned] = useState<{ payloads: string[]; multiSupported: boolean; drawn: boolean; done: boolean; warnings: string[] }>({ payloads: [], multiSupported: false, drawn: false, done: false, warnings: [] })
   const [pasted, setPasted] = useState('')
   const [forensics, setForensics] = useState<{ ran: boolean; indicators: ForensicIndicator[]; notes: string[] }>({ ran: false, indicators: [], notes: [] })
   const [digest, setDigest] = useState('')
@@ -87,7 +90,7 @@ export function PermitPanel() {
     setNeedPw(false)
     setReport(null)
     setSaved(false)
-    setScanned({ payloads: [], multiSupported: false, drawn: false, done: false })
+    setScanned({ payloads: [], multiSupported: false, drawn: false, done: false, warnings: [] })
     setForensics({ ran: false, indicators: [], notes: [] })
     setExtraction({ ran: false, ambiguous: [], missing: [], note: '' })
   }
@@ -130,7 +133,7 @@ export function PermitPanel() {
       setBusy('Scanning QR / barcodes')
       const multi = await scanQrMulti(loaded.pages, setBusy)
       const pattern = multi.payloads.length ? null : detectQrPattern(loaded.pages)
-      setScanned({ payloads: multi.payloads, multiSupported: multi.multiSupported, drawn: !!pattern?.present, done: true })
+      setScanned({ payloads: multi.payloads, multiSupported: multi.multiSupported, drawn: !!pattern?.present, done: true, warnings: multi.warnings })
 
       setBusy('Forensics')
       const meta = analyzeMetadata(loaded.bytes, file.type, file.name)
@@ -258,10 +261,13 @@ export function PermitPanel() {
               <textarea value={pasted} onChange={(e) => { setPasted(e.target.value); setReport(null) }} rows={3} className="rounded-md border border-input bg-background/60 p-2 font-mono text-xs" placeholder="VSP1.…  or  {&quot;permitNo&quot;:…}" />
             </label>
             {scanned.done && (
-              <dl>
-                <KeyValue label="QR / barcodes decoded" value={scanned.payloads.length} tone={scanned.payloads.length ? undefined : 'warning'} />
-                <KeyValue label="Several codes detectable" value={scanned.multiSupported ? 'yes (browser BarcodeDetector)' : 'no: only the first code is read'} tone={scanned.multiSupported ? undefined : 'warning'} />
-              </dl>
+              <>
+                <dl>
+                  <KeyValue label="QR / barcodes decoded" value={scanned.payloads.length} tone={scanned.payloads.length ? undefined : 'warning'} />
+                  <KeyValue label="Several codes detectable" value={scanned.multiSupported ? 'yes (browser BarcodeDetector)' : 'no: only the first QR may be read'} tone={scanned.multiSupported ? undefined : 'warning'} />
+                </dl>
+                {scanned.warnings.map((warning) => <p key={warning} className="text-xs text-warning">{warning}</p>)}
+              </>
             )}
             {extraction.note && <p className="text-xs text-muted-foreground">{extraction.note}</p>}
             {error && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>}
@@ -283,12 +289,14 @@ export function PermitPanel() {
             ))}
           </div>
           <details className="mt-3">
-            <summary className="cursor-pointer select-none text-xs text-muted-foreground">Movement, vehicle and cargo fields (optional)</summary>
+            <summary className="cursor-pointer select-none text-xs text-muted-foreground">Movement, vehicle, cargo and document fields (optional)</summary>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {MORE.map((k) => (
                 <label key={k} className="flex flex-col gap-1">
                   <span className="text-xs text-muted-foreground">{FIELD_LABEL[k]}</span>
-                  <input value={fields[k]} onChange={(e) => set(k, e.target.value)} className={input} />
+                  {k === 'mrzText'
+                    ? <textarea value={fields[k]} onChange={(e) => set(k, e.target.value)} className={cn(input, 'min-h-20 py-2 font-mono text-xs')} />
+                    : <input value={fields[k]} onChange={(e) => set(k, e.target.value)} className={input} />}
                 </label>
               ))}
             </div>
