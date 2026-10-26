@@ -1,4 +1,4 @@
-import { authenticate, json, sameOrigin, noteFail, throttled } from '@/lib/server/auth'
+import { authenticate, clearFails, json, sameOrigin, noteFail, throttled } from '@/lib/server/auth'
 import { appendAudit } from '@/lib/server/audit'
 import { cookieHeader, signSession } from '@/lib/server/core'
 export const runtime = 'nodejs'
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     return json({ error: r.reason === 'locked' ? `Account locked. Try again in ${Math.ceil((r.retryAfter ?? 900) / 60)} min.` : 'Invalid operator ID or passphrase' }, r.reason === 'locked' ? 429 : 401)
   }
   const token = signSession({ sub: r.user.operatorId, role: r.user.role })
+  clearFails(`ip:${ip}`)
   await appendAudit(r.user.operatorId, 'SESSION_OPEN', r.user.role)
   return json({ operatorId: r.user.operatorId, role: r.user.role, startedAt: Date.now() }, 200, { 'set-cookie': cookieHeader(token) })
 }
