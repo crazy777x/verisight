@@ -7,6 +7,7 @@ import type { Meta } from './metadata'
 import { floorFor, HARD_LOCK_RISK, REVIEW_RISK, type FlagCode, type Severity } from './policy'
 import { dobSanity, validateDl, validateEpic, validatePan, type IdKind } from './docs'
 import { classifyQrPayload } from './qrformat'
+import { inspectPanQr } from './pan-qr'
 
 /* ============================================================
  * EVIDENCE-BASED VERDICT
@@ -303,6 +304,25 @@ export function buildVerdict(i: VerdictInput): Verdict {
   if (i.kind === 'pan') {
     if (i.printed.pan) validatePan(i.printed.pan, i.printed.name, i.printed.fatherName).forEach((c) => addId(c))
     else add({ severity: 'high', code: 'UNREADABLE', title: 'PAN number could not be read', detail: 'The card looks like a PAN card but no AAAAA9999A number was found. Use a sharper photo.', points: 20 })
+    if (i.qr) {
+      const qrCheck = inspectPanQr(i.qr.text, { pan: i.printed.pan, name: i.printed.name })
+      if (qrCheck.pan.result === 'mismatch')
+        add({
+          severity: 'medium',
+          code: 'QR_MISMATCH',
+          title: 'PAN in decoded QR differs from printed PAN',
+          detail: 'A PAN-like value decoded from the QR differs from the OCR-read card number. OCR or QR parsing may be wrong; compare both values visually. The QR payload is not authenticated.',
+          points: 8,
+        })
+      if (qrCheck.name.result === 'mismatch')
+        add({
+          severity: 'medium',
+          code: 'QR_MISMATCH',
+          title: 'Name in decoded QR differs from printed name',
+          detail: 'A name field decoded from the QR differs from the OCR-read card name. OCR or QR parsing may be wrong; compare both values visually. The QR payload is not authenticated.',
+          points: 5,
+        })
+    }
   }
   if (i.kind === 'dl') {
     if (i.printed.dl) validateDl(i.printed.dl).forEach((c) => addId(c))

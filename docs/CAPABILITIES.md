@@ -17,6 +17,7 @@ PASSED / FAILED / ATTENTION / INFO / NOT APPLICABLE / NOT AVAILABLE. NOT APPLICA
 - Purpose + document-type selection, per-type applicability table (`lib/purposes.ts`).
 - Date / validity / daily-window / permitted-day / single-entry / entry-point rules (`lib/permit.ts`).
 - QR payload parsing (JSON, key=value, link, VSP1 demo envelope), truncation / ambiguity detection, QR-vs-print comparison.
+- For PAN cards, recognizable fields in a decoded QR are compared with OCR-read PAN/name. This does not validate an official PAN QR format or prove issuer authenticity; a match does not lower review risk.
 - ECDSA P-256 signature check for the **VSP1 demo envelope**, with a pinned-key trust list.
 - QR links are never opened; private / metadata / credentialed / punycode URLs are flagged.
 - File validation by size, type and magic bytes (`lib/upload.ts`).
@@ -29,6 +30,6 @@ PASSED / FAILED / ATTENTION / INFO / NOT APPLICABLE / NOT AVAILABLE. NOT APPLICA
 - Local movement records are browser storage, not tamper-proof, not official.
 - Several QR codes on one page can be told apart only where the browser has BarcodeDetector (Chrome / Edge / Android); elsewhere only the first code is read and the UI says so.
 - Analysis still runs in the browser (see CHANGES.md v5): the server cannot re-check a risk number.
-- PAN / Voter ID / DL have no public checksum or signature here: format only.
+- PAN / Voter ID / DL have no public checksum or issuer signature here: PAN format and generic QR-field comparisons only.
 - Photograph comparison is the existing Biometric tab; no new face model was added.
 - Forensics are heuristics: recompression, screenshots and scans can trigger them, and missing metadata is never evidence.

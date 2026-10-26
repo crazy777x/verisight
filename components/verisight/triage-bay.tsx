@@ -27,6 +27,7 @@ import { analyzeTamper, labelRegions, type TamperReport } from '@/lib/tamper'
 import { HARD_LOCK_RISK, REVIEW_RISK, type Verdict } from '@/lib/verdict'
 import { detectQrPattern, type QrPattern } from '@/lib/qrpattern'
 import { validateDl, validateEpic, validatePan, type IdKind } from '@/lib/docs'
+import { inspectPanQr, type PanQrInspection } from '@/lib/pan-qr'
 import { SelectionPanel } from './selection-panel'
 import { suggestDocType, docTypeById, type DocTypeId } from '@/lib/purposes'
 import { validateFile } from '@/lib/upload'
@@ -75,6 +76,7 @@ type Result = {
   qrEngine: string
   qrRows: Row[]
   qrAadhaar: AadhaarQr | null
+  panQr: PanQrInspection | null
   qrSig: SigCheck | null
   tamper: TamperReport
   verdict: Verdict
@@ -156,6 +158,38 @@ function IdentityPanel({ result }: { result: Result }) {
               ))}
             </ul>
           )}
+        </>
+      )}
+    </Panel>
+  )
+}
+
+function PanQrPanel({ inspection }: { inspection: PanQrInspection | null }) {
+  const fieldStatus = (result: PanQrInspection['pan']['result']) => {
+    if (result === 'match') return <StatusBadge tone="success">Match</StatusBadge>
+    if (result === 'mismatch') return <StatusBadge tone="warning">Differs</StatusBadge>
+    if (result === 'ambiguous') return <StatusBadge tone="warning">Ambiguous</StatusBadge>
+    return <StatusBadge tone="neutral">Not compared</StatusBadge>
+  }
+  const maskPan = (value: string) => value.length === 10 ? `${value.slice(0, 2)}XXXXX${value.slice(7)}` : value || 'not found'
+
+  return (
+    <Panel title="PAN QR payload comparison" icon={Binary}>
+      {!inspection ? (
+        <p className="text-xs text-muted-foreground">No QR was decoded. This alone is not evidence that the PAN card is fake.</p>
+      ) : (
+        <>
+          <dl>
+            <KeyValue label="Decoded payload" value={`${inspection.formatLabel} · ${inspection.bytes} bytes`} />
+            <KeyValue label="PAN in QR / printed" value={`${maskPan(inspection.pan.value)} / ${maskPan(inspection.pan.printed)}`} />
+            <KeyValue label="PAN comparison" value={fieldStatus(inspection.pan.result)} />
+            <KeyValue label="Name in QR" value={inspection.name.value || 'not found'} />
+            <KeyValue label="Printed name" value={inspection.name.printed || 'not read'} />
+            <KeyValue label="Name comparison" value={fieldStatus(inspection.name.result)} />
+          </dl>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+            This checks recognizable decoded fields only; it does not validate an official PAN QR format, signature, issuer, or PAN status. A match is not proof of genuineness and does not lower review risk. Differences may be OCR or parsing errors, so confirm them visually.
+          </p>
         </>
       )}
     </Panel>
@@ -272,6 +306,7 @@ export function TriageBay() {
       const qrPattern = !qr && kind !== 'mrz' ? detectQrPattern(loaded.pages) : null
       let qrAadhaar: AadhaarQr | null = null
       let qrRows: Row[] = []
+      const panQr = qr && kind === 'pan' ? inspectPanQr(qr.text, { pan: printed.pan, name: printed.name }) : null
       let qrSig: SigCheck | null = null
       if (qr && kind === 'aadhaar') {
         try {
@@ -354,6 +389,7 @@ export function TriageBay() {
         qrEngine: qr?.engine ?? '',
         qrRows,
         qrAadhaar,
+        panQr,
         qrSig,
         tamper,
         verdict,
@@ -631,7 +667,10 @@ export function TriageBay() {
                   <p className="mt-3 text-[11px] text-muted-foreground">MRZ is read by OCR. A single misread character fails a check digit, so confirm visually before acting.</p>
                 </Panel>
               ) : (
-                <IdentityPanel result={result} />
+                <>
+                  <IdentityPanel result={result} />
+                  {result.kind === 'pan' && <PanQrPanel inspection={result.panQr} />}
+                </>
               )}
             </div>
 
