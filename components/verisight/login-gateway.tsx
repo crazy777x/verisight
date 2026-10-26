@@ -2,18 +2,25 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export function LoginGateway() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   const handleFillDemo = () => {
-    setEmail('admin@verisight.local');
-    setPassword('admin123');
+    setEmail('OFF1');
+    setPassword('officer-pass-123');
   };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (email === 'OFF1' && password === 'officer-pass-123') {
+      router.push('/dashboard');
+    } else {
+      alert('Invalid ID or Password');
+    }
   };
 
   return (
@@ -25,8 +32,8 @@ export function LoginGateway() {
             <span>🛡️</span> Judge Demo Access:
           </p>
           <p className="text-xs text-blue-300/80 mb-3">
-            Email: <code className="bg-black/30 px-1 py-0.5 rounded text-blue-100">admin@verisight.local</code><br />
-            Password: <code className="bg-black/30 px-1 py-0.5 rounded text-blue-100">admin123</code>
+            ID/Email: <code className="bg-black/30 px-1 py-0.5 rounded text-blue-100">OFF1</code><br />
+            Password: <code className="bg-black/30 px-1 py-0.5 rounded text-blue-100">officer-pass-123</code>
           </p>
           <Button 
             type="button" 
@@ -46,14 +53,14 @@ export function LoginGateway() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1">Email ID</label>
+            <label className="block text-xs font-medium text-gray-300 mb-1">Officer ID / Email</label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full rounded-md border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-              placeholder="Enter email..."
+              placeholder="Enter ID..."
             />
           </div>
 
