@@ -16,6 +16,12 @@ const queue: typeof import('../lib/server/queue') = require('../lib/server/queue
 
 const req = (token?: string) => new Request('http://localhost/x', { headers: token ? { cookie: `${core.COOKIE}=${token}` } : {} })
 
+test('bundled demo account works when no users file exists', async () => {
+  const good = await auth.authenticate('OFF1', 'officer2006')
+  assert.ok(good.ok && good.user.role === 'officer')
+  assert.equal((await auth.authenticate('OFF1', 'wrong-password')).ok, false)
+})
+
 test('users: weak passphrase / missing PIN rejected, good user created', async () => {
   await assert.rejects(auth.createUser('OFF-0001', 'officer', 'short'))
   await assert.rejects(auth.createUser('INV-0001', 'investigator', 'long-enough-pass-1'))

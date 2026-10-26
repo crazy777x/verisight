@@ -4,8 +4,15 @@ import { checkSecret, exclusive, hashSecret, readCookie, readJson, verifySession
 export type UserRecord = { operatorId: string; role: Role; salt: string; hash: string; pinSalt?: string; pinHash?: string; createdAt: number }
 
 const USERS = 'users.json'
+const DEMO_USER: UserRecord = {
+  operatorId: 'OFF1',
+  role: 'officer',
+  salt: '6e405a9ff4916b2533dec921c1ca1f76',
+  hash: '296810f273308e86d11fedc991536ca6488df90bb4a7577ea670d5f7bff64f0bfd9047c9095be7128ca7f7284d30c380a5decb0d243b769a9dd0225cc0b17261',
+  createdAt: 0,
+}
 /** Real users (users.json today; replace this one function with a database / SSO lookup). */
-export const loadUsers = () => readJson<UserRecord[]>(USERS, [])
+export const loadUsers = () => readJson<UserRecord[]>(USERS, [DEMO_USER])
 
 export async function createUser(operatorId: string, role: Role, passphrase: string, pin?: string) {
   if (!/^[A-Z0-9-]{4,24}$/.test(operatorId)) throw new Error('Operator ID must be 4-24 chars A-Z 0-9 -')
