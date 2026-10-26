@@ -1,0 +1,38 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.design-cache/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env*.local
+
+# Common ignores
+node_modules
+.next/
+.DS_Store
+# server data (users, audit log, queue) and secrets
+/data
+.env.local
+.env
+
+# --- Python Backend Ignores ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+dist/
+build/
+
+# --- Cryptography & Security Certificates ---
+*.pem
+*.cer
+*.key
+
+# --- OS Specific ---
+Thumbs.db

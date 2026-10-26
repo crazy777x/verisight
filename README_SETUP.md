@@ -1,0 +1,41 @@
+# VeriSight: setup
+
+```
+npm install
+cp .env.example .env.local          # Windows: copy .env.example .env.local
+# 1. put a random 32+ char value in SESSION_SECRET
+# 2. create accounts (there is NO default login any more):
+node scripts/create-user.mjs OFF-0001 officer      "a-long-passphrase-123"
+node scripts/create-user.mjs INV-0001 investigator "another-long-pass-456" 123456
+node scripts/create-user.mjs ADM-0001 admin        "third-long-pass-789"   654321
+# 3. (to get "UIDAI VERIFIED") download the UIDAI certificate, confirm it from a source you trust, then:
+node scripts/fingerprint.mjs uidai.cer uidai
+# 4. To trust a specific Aadhaar PDF signer, obtain its certificate from an authoritative source and confirm it:
+node scripts/fingerprint.mjs aadhaar-pdf-signer.cer aadhaar-pdf-signer
+# Or pin a verified CCA root/intermediate instead:
+node scripts/fingerprint.mjs cca-root.cer pdf-root
+# Pin the certificate DER or public-key SPKI SHA-256 fingerprint shown above in .env.local.
+# Restart/rebuild the app after changing environment variables.
+npm run dev                                 # http://localhost:3000
+npm test                                    # 104 automated tests
+```
+Do not trust a certificate based only on its displayed name or because it is embedded in the PDF. PDF CA roots are pinned by certificate DER or public-key SPKI SHA-256 fingerprint; an Aadhaar PDF signer pin applies only to Aadhaar PDFs. Without an applicable verified fingerprint, a valid PDF signature remains untrusted.
+For image uploads, OCR, QR discovery, metadata markers and pixel-forensics checks run on supported JPEG, PNG, WEBP and TIFF files, including images with missing EXIF. UIDAI certificate verification applies only to Aadhaar Secure QR codes. Pixel/metadata checks are indicators for review, not a guarantee that an image is original: AI/editing metadata can be removed, and recompression or camera processing can resemble edits. An AI metadata marker triggers review, not an automatic rejection.
+Investigator / admin accounts have a personal override PIN (the last argument). Officers have none.
+Users, queue and audit log are stored in `./data` (git-ignored). Back it up; delete `data/` to reset.
+
+## Workflow (v6)
+1. Select verification purpose, 2. select document type (or let auto-detect *suggest* one), 3. upload, 4. review and confirm the extracted fields,
+5. run the applicable checks, 6. read the report. Identity documents go through **Document Triage**; passes and permits through **Border Pass & Permit**.
+Changing purpose or type keeps the uploaded file. See `docs/CAPABILITIES.md` for what is and is not verified.
+
+## Demo mode (no database needed)
+Set `DEMO_MODE=true` (hosting environment variables, plus `SESSION_SECRET` in production). Then **any operator ID + any passphrase logs in**.
+- ID starting with `OFF` = officer, starting with `INV` = investigator, anything else = admin (e.g. `ADMIN` / `1234`).
+- For overrides, any PIN of 4+ characters works.
+
+**Demo mode is completely open. Never set `DEMO_MODE` in a real deployment.**
+
+## Going live (client / government)
+Do not set `DEMO_MODE`. The client's developer replaces `loadUsers()` in `lib/server/auth.ts` (and the file read/write calls in `queue.ts` / `audit.ts`) with their database or SSO.
+Roles, lockout, PIN rules and sessions stay unchanged.
