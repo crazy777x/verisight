@@ -1,6 +1,7 @@
 # VeriSight: setup
 
 ```
+cd verisight-v6                    # when starting from the repository folder
 npm install
 cp .env.example .env.local          # Windows: copy .env.example .env.local
 # 1. put a random 32+ char value in SESSION_SECRET
@@ -19,6 +20,7 @@ node scripts/fingerprint.mjs cca-root.cer pdf-root
 npm run dev                                 # http://localhost:3000
 npm test                                    # 104 automated tests
 ```
+The web app runs at `http://localhost:3000`. The `/api/verify-document` route forwards authenticated uploads to the Python service. To use it, install `backend/requirements.txt` from the repository folder, configure the AWS S3 environment variables required by `backend/services/s3_service.py`, then start `backend/app.py` in a second terminal. The default backend URL is `http://127.0.0.1:5000`; set `VERISIGHT_BACKEND_URL` in `.env.local` if it is hosted elsewhere. If the Python service is stopped, the route returns a clear `503` instead of a `404`.
 Do not trust a certificate based only on its displayed name or because it is embedded in the PDF. PDF CA roots are pinned by certificate DER or public-key SPKI SHA-256 fingerprint; an Aadhaar PDF signer pin applies only to Aadhaar PDFs. Without an applicable verified fingerprint, a valid PDF signature remains untrusted.
 For image uploads, OCR, QR discovery, metadata markers and pixel-forensics checks run on supported JPEG, PNG, WEBP and TIFF files, including images with missing EXIF. UIDAI certificate verification applies only to Aadhaar Secure QR codes. Pixel/metadata checks are indicators for review, not a guarantee that an image is original: AI/editing metadata can be removed, and recompression or camera processing can resemble edits. An AI metadata marker triggers review, not an automatic rejection.
 Investigator / admin accounts have a personal override PIN (the last argument). Officers have none.

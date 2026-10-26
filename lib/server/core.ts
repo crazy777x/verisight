@@ -3,8 +3,10 @@ import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-export const DATA_DIR = process.env.VERISIGHT_DATA_DIR || path.join(process.cwd(), 'data')
 export const IS_PROD = process.env.NODE_ENV === 'production'
+export const DATA_DIR =
+  process.env.VERISIGHT_DATA_DIR ||
+  (process.env.VERCEL ? path.join('/tmp', 'verisight') : path.join(process.cwd(), 'data'))
 
 let devSecret: string | null = null
 export function sessionSecret(): string {
