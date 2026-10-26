@@ -1,11 +1,19 @@
 import { authenticate, clearFails, json, sameOrigin, noteFail, throttled } from '@/lib/server/auth'
 import { appendAudit } from '@/lib/server/audit'
-import { cookieHeader, signSession } from '@/lib/server/core'
+import { cookieHeader, sessionSecret, signSession } from '@/lib/server/core'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return json({ error: 'Bad origin' }, 403)
+  try {
+    sessionSecret()
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('SESSION_SECRET')) {
+      return json({ error: 'Demo sign-in is unavailable. Configure SESSION_SECRET (32+ characters) in Vercel and redeploy.' }, 503)
+    }
+    throw error
+  }
   const ip = (req.headers.get('x-forwarded-for') ?? 'local').split(',')[0].trim()
   if (throttled(`ip:${ip}`)) return json({ error: 'Too many attempts. Try again later.' }, 429)
   let body: any
