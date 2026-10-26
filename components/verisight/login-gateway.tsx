@@ -32,10 +32,10 @@ export function LoginGateway() {
     await submitCredentials(operatorId, passphrase)
   }
 
-  const enterDemo = async () => {
+  const fillDemoCredentials = () => {
     setOperatorId('OFF1')
-    setPassphrase('officer-pass-123')
-    await submitCredentials('OFF1', 'officer-pass-123')
+    setPassphrase('officer2006')
+    setError('')
   }
 
   return (
@@ -171,34 +171,30 @@ export function LoginGateway() {
                 <div className="flex items-start gap-3">
                   <LockKeyhole className="mt-0.5 size-4 shrink-0 text-[#315b52]" aria-hidden="true" />
                   <div>
-                    <h3 className="text-xs font-semibold text-[#35434a]">Demo access · testing only</h3>
+                    <h3 className="text-xs font-semibold text-[#35434a]">Temporary demo login</h3>
                     <p className="mt-1 text-[11px] leading-5 text-[#657078]">
-                      These sample IDs are for the demo environment only, not real accounts. Demo mode must be enabled.
+                      Enter these demo credentials manually, or fill them into the form and sign in.
                     </p>
                   </div>
                 </div>
                 <dl className="mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 border-t border-[#e1e3df] pt-3 text-xs">
-                  <dt className="text-[#657078]">Officer</dt>
+                  <dt className="text-[#657078]">Temporary ID</dt>
                   <dd className="font-mono text-[#35434a]">OFF1</dd>
-                  <dt className="text-[#657078]">Investigator</dt>
-                  <dd className="font-mono text-[#35434a]">INV1</dd>
-                  <dt className="text-[#657078]">Admin</dt>
-                  <dd className="font-mono text-[#35434a]">ADM1</dd>
                   <dt className="text-[#657078]">Password</dt>
-                  <dd className="text-right text-[#35434a]">Any non-empty value</dd>
+                  <dd className="font-mono text-[#35434a]">officer2006</dd>
                 </dl>
                 <p className="mt-3 text-[10px] leading-4 text-[#7b8589]">
-                  Demo credentials are public and provide no account security. Use only with sample data.
+                  This shared temporary account is for demonstrations only. Do not use it for real data.
                 </p>
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={enterDemo}
+                  onClick={fillDemoCredentials}
                   disabled={isSubmitting}
                   className="text-xs font-medium text-[#315b52] underline decoration-[#315b52]/35 underline-offset-4 hover:decoration-[#315b52] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#315b52]"
                 >
-                  {isSubmitting ? 'Signing in…' : 'Fill credentials & sign in'}
+                  Fill demo credentials
                 </button>
               </div>
             </div>

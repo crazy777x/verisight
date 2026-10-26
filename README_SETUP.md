@@ -5,7 +5,7 @@ cd verisight-v6                    # when starting from the repository folder
 npm install
 cp .env.example .env.local          # Windows: copy .env.example .env.local
 # 1. put a random 32+ char value in SESSION_SECRET
-# 2. create accounts (there is NO default login any more):
+# 2. create your own accounts (bundled demo login is listed below):
 node scripts/create-user.mjs OFF-0001 officer      "a-long-passphrase-123"
 node scripts/create-user.mjs INV-0001 investigator "another-long-pass-456" 123456
 node scripts/create-user.mjs ADM-0001 admin        "third-long-pass-789"   654321
@@ -31,12 +31,15 @@ Users, queue and audit log are stored in `./data` (git-ignored). Back it up; del
 5. run the applicable checks, 6. read the report. Identity documents go through **Document Triage**; passes and permits through **Border Pass & Permit**.
 Changing purpose or type keeps the uploaded file. See `docs/CAPABILITIES.md` for what is and is not verified.
 
-## Demo mode (no database needed)
-Set `DEMO_MODE=true` (hosting environment variables, plus `SESSION_SECRET` in production). Then **any operator ID + any passphrase logs in**.
+## Demo login
+The bundled demo account is **ID `OFF1` / password `officer2006`**. It is an officer account and works with normal login; `DEMO_MODE` does not need to be enabled.
+
+## Open demo mode (no database needed)
+Alternatively, setting `DEMO_MODE=true` (hosting environment variables, plus `SESSION_SECRET` in production) allows **any operator ID + any passphrase to log in**.
 - ID starting with `OFF` = officer, starting with `INV` = investigator, anything else = admin (e.g. `ADMIN` / `1234`).
 - For overrides, any PIN of 4+ characters works.
 
-**Demo mode is completely open. Never set `DEMO_MODE` in a real deployment.**
+**DEMO_MODE is completely open. Never set it in a real deployment. The bundled demo account is also public; use only with sample data.**
 
 ## Going live (client / government)
 Do not set `DEMO_MODE`. The client's developer replaces `loadUsers()` in `lib/server/auth.ts` (and the file read/write calls in `queue.ts` / `audit.ts`) with their database or SSO.
