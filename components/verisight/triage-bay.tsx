@@ -39,6 +39,7 @@ import { useStore, type FlagReason } from './store'
 import { ActionButton, KeyValue, Panel, ProgressBar, RiskGauge, StatusBadge, StepList } from './primitives'
 import { ScanTheatre } from './scan-theatre'
 import { ElaChart } from './ela-chart'
+import { AadhaarCrossCheck } from './aadhaar-cross-check'
 
 const DOC_TYPES = ['Auto-detect', 'Aadhaar (UIDAI)', 'PAN card', 'Passport (TD3)', 'National ID (TD1)', "Driving licence", 'Voter ID (EPIC)'] as const
 type DocType = (typeof DOC_TYPES)[number]
@@ -98,6 +99,15 @@ function makeThumb(c: HTMLCanvasElement) {
 }
 
 const maskAadhaar = (n: string) => (n.length === 12 ? `XXXX XXXX ${n.slice(8)}` : n || '—')
+
+function docLabelForKind(kind: IdKind) {
+  if (kind === 'aadhaar') return 'Aadhaar'
+  if (kind === 'pan') return 'PAN card'
+  if (kind === 'dl') return 'Driving licence'
+  if (kind === 'epic') return 'Voter ID'
+  if (kind === 'mrz') return 'Passport / national ID'
+  return 'document'
+}
 
 
 function IdentityPanel({ result }: { result: Result }) {
@@ -677,6 +687,14 @@ export function TriageBay() {
             <MetaPanel meta={result.meta} />
 
             <TamperViewer page={result.page} report={result.tamper} words={result.printed.words} />
+
+            {result.kind !== 'aadhaar' && (
+              <AadhaarCrossCheck
+                key={result.caseId ?? result.fileDigest}
+                documentType={docLabelForKind(result.kind)}
+                documentFields={{ name: result.printed.name, dob: result.printed.dob, gender: result.printed.gender, pincode: result.printed.pincode }}
+              />
+            )}
 
             <div className="grid gap-5 lg:grid-cols-2">
               <Panel

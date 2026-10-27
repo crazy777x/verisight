@@ -17,6 +17,7 @@ import {
 import { useStore } from './store'
 import { SelectionPanel } from './selection-panel'
 import { ActionButton, AlertBanner, KeyValue, Panel, Spinner, StatusBadge } from './primitives'
+import { AadhaarCrossCheck } from './aadhaar-cross-check'
 
 const LS_RECORDS = 'verisight.permit.records.v1'
 /** Pinned SHA-256 fingerprints (hex, comma separated) of signing keys you trust. Empty = every issuer is "unknown". */
@@ -425,6 +426,13 @@ export function PermitPanel() {
             </div>
           </div>
         </Panel>
+      )}
+      {report && report.docType !== 'aadhaar' && (
+        <AadhaarCrossCheck
+          key={`${report.at}-${report.docType}`}
+          documentType={docTypeById(report.docType).label}
+          documentFields={{ name: fields.holderName }}
+        />
       )}
     </div>
   )

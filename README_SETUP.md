@@ -30,6 +30,7 @@ Users, queue and audit log are stored in `./data` (git-ignored). Back it up; del
 1. Select verification purpose, 2. select document type (or let auto-detect *suggest* one), 3. upload, 4. review and confirm the extracted fields,
 5. run the applicable checks, 6. read the report. Identity documents go through **Document Triage**; passes and permits through **Border Pass & Permit**.
 Changing purpose or type keeps the uploaded file. See `docs/CAPABILITIES.md` for what is and is not verified.
+After a non-Aadhaar document check, an optional Aadhaar cross-check is available. The existing UIDAI key, signature verification, Aadhaar QR-to-print checks, and Aadhaar verdict logic are reused unchanged; the Aadhaar result is trusted as a comparison source only if that existing verdict reports UIDAI verification. Only common readable identity fields are compared, and a cross-document match does not prove that the other document was issued by its authority.
 
 ## Demo login
 The bundled demo account is **ID `OFF1` / password `officer2006`**. It is an officer account and works with normal login; `DEMO_MODE` does not need to be enabled.
